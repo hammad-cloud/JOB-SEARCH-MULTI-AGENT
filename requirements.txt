@@ -1,0 +1,7 @@
+# Runtime (install the project with: pip install -e .)
+-e .
+
+# Dev extras
+pytest>=8.2
+pytest-cov>=5.0
+ruff>=0.5

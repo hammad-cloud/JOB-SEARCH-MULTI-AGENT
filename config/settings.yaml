@@ -1,0 +1,21 @@
+app:
+  name: Multi-Agent Job Search
+  log_level: INFO
+  data_dir: data
+  use_mock_jobs: true
+  use_llm: false
+
+llm:
+  provider: openai
+  model: gpt-4o-mini
+  temperature: 0.2
+  max_tokens: 2000
+
+search:
+  default_location: Remote
+  results_limit: 25
+  top_matches: 5
+  country: us
+
+matching:
+  min_score: 40

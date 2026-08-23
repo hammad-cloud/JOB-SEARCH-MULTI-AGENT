@@ -1,0 +1,36 @@
+# Environment and secrets
+.env
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Data (keep folders, ignore user files)
+data/resumes/*
+data/jobs/*
+data/applications/*
+!data/resumes/.gitkeep
+!data/jobs/.gitkeep
+!data/applications/.gitkeep
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
