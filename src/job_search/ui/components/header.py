@@ -1,25 +1,40 @@
-"""Dashboard header with title and CV upload."""
+"""Dashboard header (greeting + date) and sidebar CV upload."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
 
 import streamlit as st
 
 from job_search.ui.services.resume_io import load_uploaded_resume_text
 
 
+def _greeting(hour: int) -> str:
+    if hour < 12:
+        return "Good morning"
+    if hour < 18:
+        return "Good afternoon"
+    return "Good evening"
+
+
 def render_header() -> object | None:
-    """Render title row and CV uploader. Returns the uploaded file, if any."""
-    top_left, top_right = st.columns([2, 1])
-    with top_left:
-        st.title("Job Search Dashboard")
-        st.caption(f"Generated: {date.today().isoformat()}")
-    with top_right:
+    """Render greeting row and sidebar CV uploader. Returns the uploaded file, if any."""
+    now = datetime.now()
+    st.markdown(
+        f"""
+        <div class="date-chip">{now.strftime("%b %d, %Y")} &#128197;</div>
+        <p class="dash-greeting">{_greeting(now.hour)}</p>
+        <p class="dash-sub">Here is your job search report and application tracker.</p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.sidebar:
+        st.markdown('<div class="side-section">YOUR CV</div>', unsafe_allow_html=True)
         resume_file = st.file_uploader(
             "Upload CV",
             type=["txt", "md", "pdf"],
-            label_visibility="visible",
+            label_visibility="collapsed",
         )
         if resume_file:
             try:

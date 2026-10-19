@@ -29,21 +29,34 @@ settings = get_settings()
 st.set_page_config(
     page_title="Job Search Dashboard",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 inject_dashboard_theme()
 bootstrap_fresh_session(settings.default_location, data_dir=settings.data_dir)
 
-resume_file = render_header()
+# Only the selected page renders; re-assign form keys so Streamlit keeps them while hidden.
+for _key in (
+    "design_company", "design_role", "design_job_url", "design_job_description",
+    "design_pasted_resume", "job_search_keywords", "job_search_location", "job_search_source",
+):
+    if _key in st.session_state:
+        st.session_state[_key] = st.session_state[_key]
 
-pipeline_tab, resume_tab, jobs_tab = st.tabs(["Pipeline", "Design resume", "Find jobs"])
+PAGES = {
+    "Dashboard": ":material/space_dashboard: Dashboard",
+    "Design resume": ":material/description: Design resume",
+    "Find jobs": ":material/work: Find jobs",
+}
+with st.sidebar:
+    st.markdown('<div class="brand">JobSearch.ai</div>', unsafe_allow_html=True)
+    page = st.radio("Navigation", list(PAGES), format_func=PAGES.get, label_visibility="collapsed")
+
+resume_file = render_header()
 store = TrackerStore(settings)
 
-with pipeline_tab:
+if page == "Dashboard":
     render_pipeline_page(store)
-
-with resume_tab:
+elif page == "Design resume":
     render_resume_page(settings, resume_file)
-
-with jobs_tab:
+else:
     render_jobs_page(settings, resume_file)

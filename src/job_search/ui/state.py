@@ -126,7 +126,7 @@ def prefill_design_resume(job: JobPosting) -> None:
     st.session_state.design_job_url = str(job.url) if job.url else ""
     st.session_state.design_prefill_notice = (
         f"Loaded **{job.title}** at **{job.company}**. "
-        "Open the **Design resume** tab to continue."
+        "Open **Design resume** in the sidebar to continue."
     )
 
 

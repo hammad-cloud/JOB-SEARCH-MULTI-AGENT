@@ -6,182 +6,161 @@ import streamlit as st
 
 from job_search.models.schemas import TrackerStatus
 
-# Metric accent colors (match dashboard screenshot)
+FONT_IMPORT = (
+    "@import url('https://fonts.googleapis.com/css2?"
+    "family=Epilogue:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');"
+)
+FONT_BODY = "'Inter', 'Source Sans Pro', sans-serif"
+FONT_HEADING = "'Epilogue', 'Inter', sans-serif"
+
 COLORS = {
-    "total": "#e5e7eb",
-    "in_process": "#22d3ee",
-    "active": "#3b82f6",
-    "interview": "#fbbf24",
-    "offer": "#a78bfa",
-    "hired": "#22c55e",
-    "rejected": "#ef4444",
-    "sector_bar": "#3b82f6",
-    "channel_bar": "#a78bfa",
-    "funnel_bar": "#3b82f6",
+    "primary": "#4640DE",
+    "text": "#25324B",
+    "muted": "#7C8493",
+    "border": "#D6DDEB",
+    "card_blue": "#26A4FF",
+    "card_purple": "#9F5BE0",
+    "card_orange": "#FFB836",
+    "bar_open": "#26A4FF",
+    "bar_progress": "#FFB836",
+    "up": "#56CDAD",
+    "down": "#FF6550",
 }
 
-STATUS_CHART_COLORS = {
-    "Applied / Active": COLORS["active"],
-    "In process": COLORS["in_process"],
-    "Interview": COLORS["interview"],
-    "Offer": COLORS["offer"],
-    "Hired": COLORS["hired"],
-    "Rejected/Closed": COLORS["rejected"],
+STATUS_COLORS = {
+    TrackerStatus.ACTIVE: "#26A4FF",
+    TrackerStatus.IN_PROCESS: "#7B61FF",
+    TrackerStatus.INTERVIEW: "#FFB836",
+    TrackerStatus.OFFER: "#F472B6",
+    TrackerStatus.HIRED: "#56CDAD",
+    TrackerStatus.REJECTED: "#FF6550",
 }
 
-# Legend order matching the dashboard screenshot (colored dots)
+# (status, color, short label) in legend order
 STATUS_LEGEND: list[tuple[TrackerStatus, str, str]] = [
-    (TrackerStatus.ACTIVE, COLORS["active"], "Active"),
-    (TrackerStatus.INTERVIEW, COLORS["interview"], "Interview"),
-    (TrackerStatus.OFFER, COLORS["offer"], "Offer"),
-    (TrackerStatus.HIRED, COLORS["hired"], "Hired"),
-    (TrackerStatus.REJECTED, COLORS["rejected"], "Rejected/Closed"),
+    (TrackerStatus.ACTIVE, STATUS_COLORS[TrackerStatus.ACTIVE], "Active"),
+    (TrackerStatus.IN_PROCESS, STATUS_COLORS[TrackerStatus.IN_PROCESS], "In process"),
+    (TrackerStatus.INTERVIEW, STATUS_COLORS[TrackerStatus.INTERVIEW], "Interview"),
+    (TrackerStatus.OFFER, STATUS_COLORS[TrackerStatus.OFFER], "Offer"),
+    (TrackerStatus.HIRED, STATUS_COLORS[TrackerStatus.HIRED], "Hired"),
+    (TrackerStatus.REJECTED, STATUS_COLORS[TrackerStatus.REJECTED], "Rejected"),
 ]
 
-DASHBOARD_CSS = """
+DASHBOARD_CSS = f"""
 <style>
-  .block-container {
-    padding-top: 1.2rem;
-    max-width: 1400px;
-  }
+  {FONT_IMPORT}
+  html, body, .stApp {{ font-family: {FONT_BODY}; }}
+  h1, h2, h3, .dash-greeting {{ font-family: {FONT_HEADING} !important; color: {COLORS["text"]}; }}
 
-  /* Navigation tabs — sober style, no blue flash */
-  .stTabs [data-baseweb="tab-list"] {
-    gap: 2px;
+  .block-container {{ padding-top: 1.6rem; max-width: 1400px; }}
+  [data-testid="stHeader"] {{ background: transparent; }}
+
+  /* Purple sidebar */
+  [data-testid="stSidebar"] {{ background: {COLORS["primary"]}; }}
+  [data-testid="stSidebar"] * {{ color: #FFFFFF; }}
+  [data-testid="stSidebar"] .brand {{
+    font-family: {FONT_HEADING}; font-size: 22px; font-weight: 700; margin: 0 0 18px 6px;
+  }}
+  [data-testid="stSidebar"] .side-section {{
+    font-size: 12px; letter-spacing: 0.08em; opacity: 0.75; margin: 22px 0 6px 6px;
+    padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.18);
+  }}
+
+  /* Sidebar nav: radio rendered as menu items */
+  [data-testid="stSidebar"] [role="radiogroup"] {{ gap: 4px; width: 100%; }}
+  [data-testid="stSidebar"] [role="radiogroup"] label {{
+    width: 100%; padding: 9px 14px; border-radius: 6px; margin: 0;
+  }}
+  [data-testid="stSidebar"] [role="radiogroup"] > div {{ width: 100%; }}
+  [data-testid="stSidebar"] [role="radiogroup"] label > div > div:first-child {{ display: none; }}
+  [data-testid="stSidebar"] [role="radiogroup"] label:hover {{
+    background: rgba(255,255,255,0.10);
+  }}
+  [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{ background: #FFFFFF; }}
+  [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) * {{
+    color: {COLORS["primary"]} !important; font-weight: 600;
+  }}
+
+  /* Sidebar CV uploader */
+  [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {{
+    background: rgba(255,255,255,0.10); border: 1px dashed rgba(255,255,255,0.45);
+  }}
+  [data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
+    background: #FFFFFF; border: none;
+  }}
+  [data-testid="stSidebar"] [data-testid="stFileUploader"] button * {{
+    color: {COLORS["primary"]};
+  }}
+
+  /* Header */
+  .dash-greeting {{ font-size: 24px; font-weight: 700; margin: 0; }}
+  .dash-sub {{ color: {COLORS["muted"]}; font-size: 14px; margin: 4px 0 0; }}
+  .date-chip {{
+    float: right; border: 1px solid {COLORS["border"]}; padding: 10px 14px;
+    font-size: 14px; color: {COLORS["text"]}; white-space: nowrap;
+  }}
+
+  /* Cards */
+  [data-testid="stVerticalBlockBorderWrapper"] {{
+    background: #FFFFFF; border-color: {COLORS["border"]} !important; border-radius: 4px;
+  }}
+  .card-title {{
+    font-family: {FONT_HEADING};
+    font-weight: 600;
+    font-size: 18px;
+    color: {COLORS["text"]};
+    margin: 0;
+  }}
+  .card-caption {{ color: {COLORS["muted"]}; font-size: 13px; margin: 2px 0 0; }}
+  .big-num {{
+    font-family: {FONT_HEADING}; font-size: 52px; font-weight: 600; color: {COLORS["text"]};
+    margin: 10px 0 6px; line-height: 1.1;
+  }}
+  .big-num span {{
+    font-family: {FONT_BODY};
+    font-size: 17px;
+    font-weight: 400;
+    color: {COLORS["muted"]};
+  }}
+  .seg-bar {{ display: flex; height: 10px; margin: 14px 0 16px; }}
+  .legend-grid {{
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px;
+    font-size: 13px; color: {COLORS["muted"]};
+  }}
+  .legend-grid b {{ color: {COLORS["text"]}; }}
+  .legend-grid .dot {{
+    display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+    margin-right: 8px; vertical-align: -2px;
+  }}
+
+  /* Tabs (inside Job statistics) */
+  .stTabs [data-baseweb="tab-list"] {{ gap: 24px; border-bottom: 1px solid {COLORS["border"]}; }}
+  .stTabs [data-baseweb="tab"] {{ color: {COLORS["muted"]}; padding: 8px 2px; font-weight: 500; }}
+  .stTabs [aria-selected="true"] {{ color: {COLORS["text"]} !important; font-weight: 600; }}
+  .stTabs [data-baseweb="tab-highlight"] {{ background-color: {COLORS["primary"]} !important; }}
+
+  /* Week / Month / Year toggle */
+  [data-testid="stButtonGroup"] {{
+    background: #E9EBFD;
+    padding: 4px;
+    border-radius: 2px;
+    float: right;
+  }}
+  [data-testid="stButtonGroup"] button {{
+    border: none !important;
     background: transparent;
-    border-bottom: 1px solid #30363d;
-    padding-bottom: 0;
-  }
-  .stTabs [data-baseweb="tab-highlight"],
-  .stTabs [data-baseweb="tab-border"] {
-    display: none !important;
-    background-color: transparent !important;
-    opacity: 0 !important;
-  }
-  .stTabs [data-baseweb="tab"] {
-    background: transparent;
-    border: none;
-    border-radius: 8px 8px 0 0;
-    color: #9ca3af;
-    padding: 10px 18px;
-    font-weight: 500;
-    font-size: 14px;
-    letter-spacing: 0.01em;
-    transition: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-  .stTabs [data-baseweb="tab"]:hover {
-    color: #e5e7eb;
-    background: rgba(255, 255, 255, 0.04);
-  }
-  .stTabs [aria-selected="true"] {
-    background: #161b22 !important;
-    color: #f3f4f6 !important;
-    border: 1px solid #30363d !important;
-    border-bottom-color: #161b22 !important;
-    margin-bottom: -1px;
-    font-weight: 600;
-  }
-  .stTabs button,
-  .stTabs button:focus,
-  .stTabs button:focus-visible,
-  .stTabs button:active,
-  .stTabs [data-baseweb="tab"]:focus,
-  .stTabs [data-baseweb="tab"]:active {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-  .stTabs [data-baseweb="tab-panel"] {
-    padding-top: 16px;
-    border: none;
-    background: transparent;
-  }
+    color: {COLORS["primary"]};
+  }}
+  [data-testid="stButtonGroup"] button[kind="segmented_controlActive"] {{ background: #FFFFFF; }}
 
-  /* Upload button styling */
-  [data-testid="stFileUploader"] section {
-    padding: 0;
-  }
-  [data-testid="stFileUploader"] button {
-    background: #374151;
-    color: #f3f4f6;
-    border: 1px solid #4b5563;
-    border-radius: 8px;
-    font-weight: 600;
-  }
-  [data-testid="stFileUploader"] button:hover {
-    background: #4b5563;
-    color: #ffffff;
-    border-color: #6b7280;
-  }
-
-  /* Primary buttons — muted instead of bright red/blue flash */
-  .stButton > button[kind="primary"] {
-    background: #374151;
-    border: 1px solid #4b5563;
-    color: #f9fafb;
-    font-weight: 600;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .stButton > button[kind="primary"]:hover {
-    background: #4b5563;
-    border-color: #6b7280;
-    color: #ffffff;
-  }
-  .stButton > button[kind="primary"]:focus,
-  .stButton > button[kind="primary"]:active {
-    outline: none !important;
-    box-shadow: none !important;
-    background: #4b5563;
-  }
-
-  /* Secondary buttons */
-  .stButton > button[kind="secondary"] {
-    background: #161b22;
-    border: 1px solid #30363d;
-    color: #e5e7eb;
-    border-radius: 8px;
-    font-weight: 500;
-  }
-  .stButton > button[kind="secondary"]:hover {
-    background: #1f2937;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
-  .stButton > button:focus,
-  .stButton > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Bordered chart containers */
-  [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #161b22;
-    border-color: #30363d !important;
-    border-radius: 12px;
-    padding: 8px 12px 4px;
-  }
-  [data-testid="stVerticalBlockBorderWrapper"] p {
-    color: #f3f4f6;
-    font-weight: 600;
-    margin-bottom: 0;
-  }
-
-  /* Hide plotly mode bar for cleaner cards */
-  .js-plotly-plot .plotly .modebar { display: none !important; }
+  .stButton > button[kind="primary"] {{ border-radius: 2px; font-weight: 600; }}
+  .js-plotly-plot .plotly .modebar {{ display: none !important; }}
 
   /* Find jobs */
-  .jobs-found {
-    color: #9ca3af;
-    font-size: 14px;
-    margin: 12px 0 10px;
-  }
-  div[data-testid="stMarkdownContainer"] a {
-    color: #60a5fa;
-    font-size: 18px;
-    font-weight: 600;
-    text-decoration: underline;
-  }
+  .jobs-found {{ color: {COLORS["muted"]}; font-size: 14px; margin: 12px 0 10px; }}
+  div[data-testid="stMarkdownContainer"] a {{
+    color: {COLORS["primary"]}; font-size: 18px; font-weight: 600; text-decoration: underline;
+  }}
 </style>
 """
 
@@ -194,11 +173,11 @@ def plotly_layout(**overrides) -> dict:
     base = {
         "paper_bgcolor": "rgba(0,0,0,0)",
         "plot_bgcolor": "rgba(0,0,0,0)",
-        "font": {"color": "#9ca3af", "size": 12},
-        "margin": {"l": 12, "r": 12, "t": 12, "b": 12},
+        "font": {"color": COLORS["muted"], "size": 12, "family": "Inter, sans-serif"},
+        "margin": {"l": 8, "r": 8, "t": 8, "b": 8},
         "showlegend": False,
-        "xaxis": {"gridcolor": "#30363d", "zerolinecolor": "#30363d"},
-        "yaxis": {"gridcolor": "#30363d", "zerolinecolor": "#30363d"},
+        "xaxis": {"gridcolor": "rgba(0,0,0,0)", "zerolinecolor": COLORS["border"]},
+        "yaxis": {"gridcolor": "rgba(0,0,0,0)", "zerolinecolor": COLORS["border"]},
     }
     base.update(overrides)
     return base
