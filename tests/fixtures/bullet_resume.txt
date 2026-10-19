@@ -1,0 +1,26 @@
+Sam Carter
+Python Developer
+
+Python Developer with 2 years of experience building web services with Django and Flask.
+
+Education:
+Bachelor of Science in Computer Science
+Example State University
+2018 - 2022
+
+Skills:
+- Django
+- Flask
+- NumPy
+- Pandas
+- PostgreSQL
+
+Employment History:
+
+Python Developer at Example Corp
+Jul 2023 - Present
+- Built REST APIs with Django and Flask
+
+Junior Software Engineer at Sample Labs
+Jun 2022 - Jun 2023
+- Maintained internal Python tools

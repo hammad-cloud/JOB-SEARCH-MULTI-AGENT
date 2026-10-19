@@ -9,6 +9,7 @@ from job_search.tools.resume_parser import ResumeParser
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_RESUME = ROOT / "data" / "resumes" / "sample.txt"
+BULLET_RESUME = ROOT / "tests" / "fixtures" / "bullet_resume.txt"
 
 
 def test_resume_parser_reads_sample() -> None:
@@ -50,9 +51,9 @@ def test_match_agent_ranks_python_jobs() -> None:
 
 
 def test_profile_agent_parses_bullet_skills() -> None:
-    resume = ROOT / "data" / "resumes" / "jestina-mangol-resume.txt"
+    resume = BULLET_RESUME
     profile = ProfileAgent().run(resume)
-    assert profile.name == "Jestina Mangol"
+    assert profile.name == "Sam Carter"
     assert "Django" in profile.skills
     assert "Flask" in profile.skills
     assert any("Python Developer" in title for title in profile.target_titles)
@@ -63,7 +64,7 @@ def test_pipeline_ranks_related_jobs(tmp_path, monkeypatch) -> None:
 
     settings = get_settings()
     monkeypatch.setattr(settings, "data_dir", tmp_path)
-    resume = ROOT / "data" / "resumes" / "jestina-mangol-resume.txt"
+    resume = BULLET_RESUME
     result = JobSearchPipeline(settings).run(
         resume,
         SearchPreferences(keywords=["python", "django"], remote_only=True),
