@@ -25,6 +25,7 @@ data/resumes/*
 data/jobs/*
 data/applications/*
 !data/resumes/.gitkeep
+!data/resumes/sample.txt
 !data/jobs/.gitkeep
 !data/applications/.gitkeep
 
@@ -34,3 +35,6 @@ data/applications/*
 *.swp
 .DS_Store
 Thumbs.db
+
+# Local tool config
+.claude/

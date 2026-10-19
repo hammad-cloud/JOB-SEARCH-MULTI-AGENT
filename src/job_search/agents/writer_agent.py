@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from job_search.agents.base import BaseAgent
 from job_search.models.schemas import ApplicationDraft, MatchResult, Profile
 
@@ -18,6 +20,35 @@ class WriterAgent(BaseAgent):
         return drafts
 
     def _draft(self, profile: Profile, match: MatchResult) -> ApplicationDraft:
+        if self.settings.use_llm and self.llm.is_configured:
+            drafted = self._draft_with_llm(profile, match)
+            if drafted:
+                return drafted
+        return self._draft_template(profile, match)
+
+    def _draft_with_llm(self, profile: Profile, match: MatchResult) -> ApplicationDraft | None:
+        job = match.job
+        assert job is not None
+        system_prompt = self.load_prompt("cover_letter.md") or "Write a short cover letter."
+        user_prompt = json.dumps(
+            {
+                "profile": profile.model_dump(mode="json"),
+                "job": job.model_dump(mode="json"),
+                "match": {"score": match.score, "reasons": match.reasons},
+            }
+        )
+        raw = self.llm.complete(system_prompt, user_prompt)
+        try:
+            payload = json.loads(raw)
+            return ApplicationDraft(
+                job_id=job.id,
+                cover_letter=str(payload["cover_letter"]).strip(),
+                resume_bullets=[str(item) for item in payload.get("resume_bullets", [])],
+            )
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+            return None
+
+    def _draft_template(self, profile: Profile, match: MatchResult) -> ApplicationDraft:
         job = match.job
         assert job is not None
         skills = ", ".join(profile.skills[:5]) or "relevant experience"

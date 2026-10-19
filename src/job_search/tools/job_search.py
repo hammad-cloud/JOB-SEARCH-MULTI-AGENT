@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+
+import httpx
+
 from job_search.config import Settings, get_settings
 from job_search.models.schemas import JobBoardQuery, JobPosting, SearchPreferences
 from job_search.tools.mock_jobs import MOCK_JOBS
+
+ADZUNA_URL = "https://api.adzuna.com/v1/api/jobs/{country}/search/1"
+logger = logging.getLogger(__name__)
 
 
 class JobSearchTool:
@@ -14,7 +21,59 @@ class JobSearchTool:
     def search(self, query: JobBoardQuery | SearchPreferences) -> list[JobPosting]:
         if isinstance(query, SearchPreferences):
             query = self._to_board_query(query)
+        if self.uses_live_api:
+            jobs = self._search_adzuna(query)
+            if jobs:
+                return jobs
         return self._filter_mock(query)
+
+    @property
+    def uses_live_api(self) -> bool:
+        s = self.settings
+        return not s.use_mock_jobs and bool(s.adzuna_app_id and s.adzuna_app_key)
+
+    def _search_adzuna(self, query: JobBoardQuery) -> list[JobPosting]:
+        """Live listings; returns [] on any failure so the caller falls back to mock data."""
+        keywords = " ".join(item.strip() for item in query.keywords.split(",") if item.strip())
+        params = {
+            "app_id": self.settings.adzuna_app_id,
+            "app_key": self.settings.adzuna_app_key,
+            "results_per_page": min(query.results_limit, 50),
+            "what_or": keywords,
+        }
+        location = query.location.strip()
+        if location and location.lower() != "remote":
+            params["where"] = location
+        try:
+            response = httpx.get(
+                ADZUNA_URL.format(country=self.settings.country), params=params, timeout=15
+            )
+            response.raise_for_status()
+            results = response.json().get("results", [])
+        except (httpx.HTTPError, ValueError) as error:
+            logger.warning("Adzuna search failed, using mock jobs: %s", error)
+            return []
+        jobs: list[JobPosting] = []
+        for item in results:
+            try:
+                where = (item.get("location") or {}).get("display_name", "")
+                description = item.get("description", "")
+                jobs.append(
+                    JobPosting(
+                        id=f"adzuna-{item['id']}",
+                        title=item.get("title", "Untitled role"),
+                        company=(item.get("company") or {}).get("display_name", "Unknown company"),
+                        location=where or "Unspecified",
+                        description=description,
+                        url=item.get("redirect_url") or None,
+                        source="adzuna",
+                        remote="remote" in f"{where} {description}".lower(),
+                        posted_at=item.get("created"),
+                    )
+                )
+            except (KeyError, ValueError) as error:
+                logger.warning("Skipping malformed Adzuna result: %s", error)
+        return jobs
 
     def _to_board_query(self, preferences: SearchPreferences) -> JobBoardQuery:
         return JobBoardQuery(

@@ -1,0 +1,6 @@
+Alex Rivera
+Python engineer with 5 years building APIs, data pipelines, and LLM tooling.
+
+Skills: Python, FastAPI, Pydantic, PostgreSQL, Streamlit, LLM agents
+Target titles: Backend Engineer, AI Engineer, Python Developer
+Locations: Remote
